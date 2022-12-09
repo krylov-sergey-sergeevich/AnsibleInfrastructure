@@ -1,0 +1,3 @@
+nexus_hostname: "nexus.develop.local"
+gitlab_hostname: "gitlab.develop.local"
+gitlab_full_url: "http://{{ gitlab_hostname }}"

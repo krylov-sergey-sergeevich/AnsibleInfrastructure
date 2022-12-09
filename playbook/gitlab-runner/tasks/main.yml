@@ -1,0 +1,29 @@
+- name: Add an Apt key for gitlab repo
+  ansible.builtin.apt_key:
+    url: https://packages.gitlab.com/gpg.key
+    state: present
+
+- name: Add gitlab-runner repository
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.gitlab.com/runner/gitlab-runner/debian bullseye main
+    state: present
+    filename: runner_gitlab-runner
+
+
+- name: Install gitlab-runner package
+  apt:
+    name: gitlab-runner
+    state: latest
+    update_cache: true
+  when: "not ansible_check_mode"
+
+
+- name: Create gitlab-runner config config.toml
+  template:
+    src: config.toml.j2
+    dest: /etc/gitlab-runner/config.toml
+    mode: 0600
+    owner: root
+    group: root
+  notify: 
+    - restart gitlab-runner

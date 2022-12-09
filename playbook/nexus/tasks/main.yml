@@ -1,0 +1,13 @@
+ - name: Install deps for nexus
+   include_tasks: install_deps.yml
+   
+ - name: Install or upgrade package
+   include_tasks: install_upgrade.yml
+   
+ - name: Setup nginx proxy for nexus server
+   include_tasks: setup_proxy.yml
+   tags: 
+    - [ proxy ] 
+   
+ - name: Post install step for information
+   include_tasks: post_install.yml

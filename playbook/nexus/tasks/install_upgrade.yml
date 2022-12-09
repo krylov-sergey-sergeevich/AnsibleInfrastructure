@@ -1,0 +1,113 @@
+- name: Get Nexus version
+  uri:
+    url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+    method: HEAD
+      #status_code: 302
+  register: version
+  check_mode: no    
+
+- name: Extract version from url
+  set_fact:
+    url_nx_filename: "{{ version.url | urlsplit('path') | basename }}"
+
+- name: Extract version from url
+  set_fact:
+    url_nx_version: "{{ url_nx_filename | regex_search('nexus-(\\d+\\.\\d+\\..+)-unix.*', '\\1') | first }}"
+
+- name: Get version from nexus link
+  stat:
+    path: /opt/nexus
+  register: st
+
+- name: Extract version from symbolic link
+  set_fact:
+    lnk_nx_version: "{{ st.stat.lnk_target | regex_search('nexus-(\\d+\\.\\d+\\..+)*', '\\1') | first }}"
+  when: st.stat.exists
+
+- name: Download nexus archive
+  get_url:
+    url: https://download.sonatype.com/nexus/3/latest-unix.tar.gz
+    dest: /opt
+  when: "not ansible_check_mode and (not st.stat.exists or (url_nx_version != lnk_nx_version and nexus_upgrade))"
+
+- name: Extract latex-unix.tar.gz into /opt
+  unarchive:
+    src: "/opt/{{ url_nx_filename }}"
+    dest: /opt
+    remote_src: yes
+  when: "not ansible_check_mode and (not st.stat.exists or (url_nx_version != lnk_nx_version and nexus_upgrade))"
+
+- name: Create a symbolic link to nexus dir
+  file:
+    src: "/opt/nexus-{{ url_nx_version }}"
+    dest: "/opt/nexus"
+    state: link
+  when: "(not st.stat.exists or (url_nx_version != lnk_nx_version and nexus_upgrade)) and not ansible_check_mode"
+
+- name: Create nexus unit file
+  template:
+    src: nexus.service.j2
+    dest: /etc/systemd/system/nexus.service
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - restart nexus
+    - wait port
+
+- name: reload systemd service files
+  systemd:
+    daemon_reload: yes
+
+- name: Enable nexus systemd unit
+  systemd:
+    name: nexus
+    enabled: yes
+  when: "not ansible_check_mode"
+
+- name: Add nesux user
+  user: 
+    name: nexus
+    shell: /bin/false # чтобы нельзя было войти под этим пользователем
+
+- name: Change ownership of a directory
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ nexus_user }}"
+    group: "{{ nexus_user }}"
+  loop:
+    - "/opt/sonatype-work"
+    - "/opt/nexus-{{ url_nx_version }}"
+
+- name: Replace a localhost
+  lineinfile:
+    path: /opt/nexus/bin/nexus.vmoptions
+    regexp: '^-Xms'
+    line: '-Xms{{ nexus_java_vmsize }}'
+  notify:
+    - restart nexus
+  when: "not ansible_check_mode"
+
+- name: rwdf
+  lineinfile:
+    path: /opt/nexus/bin/nexus.vmoptions
+    regexp: '^-Xmx'
+    line: '-Xmx{{ nexus_java_vmsize }}'
+  notify:
+    - restart nexus
+  when: "not ansible_check_mode"
+
+- name: 12
+  lineinfile:
+    path: /opt/nexus/bin/nexus.vmoptions
+    regexp: '^-XX:MaxDirectMemorySize='
+    line: '-XX:MaxDirectMemorySize={{ nexus_java_vmsize }}'
+  notify:
+    - restart nexus
+    - wait port
+  when: "not ansible_check_mode"
+
+- name: Run all nexus handlers
+  meta: flush_handlers

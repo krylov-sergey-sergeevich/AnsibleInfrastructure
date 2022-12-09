@@ -1,0 +1,2 @@
+- name: reload gitlab
+  ansible.builtin.command: gitlab-ctl reconfigure

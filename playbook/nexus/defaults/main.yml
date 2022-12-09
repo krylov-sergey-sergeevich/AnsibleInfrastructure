@@ -1,0 +1,3 @@
+nexus_user: "nexus"
+nexus_java_vmsize: "768m"
+nexus_upgrade: false

@@ -1,0 +1,6 @@
+runner_volumes: 
+  - "/var/run/docker.sock:/var/run/docker.sock"
+  - "/cache"
+runner_extra:
+  - "{{ gitlab_hostname }}:{{ ansible_facts.default_ipv4.address }}"
+  - "{{ nexus_hostname }}:{{ ansible_facts.default_ipv4.address }}"

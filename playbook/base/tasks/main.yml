@@ -1,0 +1,8 @@
+- name: Install host requirements
+  apt:
+    name:
+    - python3-apt
+    - gpg
+    state: present
+    update_cache: yes
+  check_mode: no

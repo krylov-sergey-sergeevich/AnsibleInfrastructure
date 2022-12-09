@@ -1,0 +1,7 @@
+- name: Install prerquisites for nexus Java
+  apt:
+    update_cache: yes
+    pkg:
+      - nvidia-openjdk-8-jre
+      - ca-certificates-java
+    state: present

@@ -1,0 +1,10 @@
+- name: restart nexus
+  service:
+    name: nexus
+    state: restarted
+  when: "not ansible_check_mode"
+
+- name: wait port
+  ansible.builtin.wait_for:
+    port: 8081
+    timeout: 600 # секунд

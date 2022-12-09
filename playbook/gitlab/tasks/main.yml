@@ -1,0 +1,59 @@
+- name: Add an Apt key for gitlab
+  ansible.builtin.apt_key:
+    url: https://packages.gitlab.com/gpg.key
+    state: present
+  when: "not ansible_check_mode"
+
+    
+- name: Add gitlab repository
+  ansible.builtin.apt_repository:
+    repo: deb https://packages.gitlab.com/gitlab/gitlab-ce/debian bullseye main
+    state: present
+    filename: gitlab_gitlab-ce
+
+- name: Gather packages list
+  package_facts:
+    manager: "auto"
+
+- name: Install or upgrade Gitlab
+  apt:
+    name: gitlab-ce
+    state: latest
+    update_cache: true
+  when: "not ansible_check_mode and ('gitlab-ce' not in ansible_facts.packages or gitlab_upgrade)"
+
+- name: Create gitlab.rb config file
+  template:
+    src: gitlab.rb.j2
+    dest: /etc/gitlab/gitlab.rb
+    mode: 0600 # read write
+    owner: root
+    group: root
+  notify: 
+    - reload gitlab
+
+- name: Add line to host file
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "127.0.0.1 {{ gitlab_hostname }}"
+
+- name: Create nginx nexus virtual host
+  template:
+    src: gitlab.j2
+    dest: /etc/nginx/sites-available/gitlab
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - reload nginx
+
+- name: Enable nginx gitlab virtual host
+  file:
+    src: /etc/nginx/sites-available/gitlab
+    dest: /etc/nginx/sites-enabled/gitlab
+    state: link
+    force: true
+  notify:
+    - reload nginx
+
+

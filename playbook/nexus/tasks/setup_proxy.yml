@@ -1,0 +1,22 @@
+- name: Create nginx nexus virtual host
+  template:
+    src: nexus.j2
+    dest: /etc/nginx/sites-available/nexus
+    mode: 0644
+    owner: root
+    group: root
+  notify:
+    - reload nginx
+  tags: 
+    - proxy
+
+- name: Enable nginx nexus virtual host
+  file:
+    src: /etc/nginx/sites-available/nexus
+    dest: /etc/nginx/sites-enabled/nexus
+    state: link
+    force: yes
+  notify:
+    - reload nginx
+  tags: 
+    - proxy

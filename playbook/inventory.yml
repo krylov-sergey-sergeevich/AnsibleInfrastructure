@@ -1,0 +1,20 @@
+- hosts: nexus
+  become: true
+  roles:
+    - base
+    - nginx
+    - nexus
+
+- hosts: gitlab
+  become: true
+  roles:
+    - base
+    - nginx
+    - gitlab 
+
+- hosts: gitlabrunner
+  become: true
+  roles:
+    - base
+    - docker
+    - gitlab-runner

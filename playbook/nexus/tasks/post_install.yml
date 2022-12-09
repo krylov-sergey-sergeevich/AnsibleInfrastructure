@@ -1,0 +1,14 @@
+- name: Check if admin.password file exists
+  stat:
+    path: "/opt/sonatype-work/nexus3/admin.password"
+  register: admin_password_file
+
+- name: Save content admin.password to var
+  slurp:
+    src: '/opt/sonatype-work/nexus3/admin.password'
+  register: default_admin_password
+  when: admin_password_file.stat.exists
+
+- name: Display admin password to console
+  debug: "msg={{ default_admin_password['content'] | b64decode }}"
+  when: admin_password_file.stat.exists

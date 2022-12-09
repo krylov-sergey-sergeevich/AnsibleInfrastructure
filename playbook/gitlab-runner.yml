@@ -1,0 +1,5 @@
+- hosts: gitlabrunner
+  become: true
+  roles:
+    - docker
+    - gitlab-runner

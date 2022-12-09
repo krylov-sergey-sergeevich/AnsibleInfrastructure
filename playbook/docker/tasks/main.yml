@@ -1,0 +1,29 @@
+- name: Add an Apt key for docker
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: Add docker repository
+  ansible.builtin.apt_repository:
+    repo: deb https://download.docker.com/linux/debian bullseye stable
+    state: present
+    filename: docker
+
+- name: Install docker-ce package
+  apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+  when: "not ansible_check_mode"
+
+
+- name: Create docker daemon config file
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    mode: 0644 
+    owner: root
+    group: root
+  notify: 
+    - restart docker
+
